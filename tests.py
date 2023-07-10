@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import itertools
 import math
 import numpy as np
@@ -27,16 +29,16 @@ def assert_distribution(f, mean, std, p=.1):
 
         t = (mean - smean) / float(sstd / math.sqrt(len(vals)))
         t = -abs(t)
-        print t, mean, smean, sstd
+        print(t, mean, smean, sstd)
 
         p1 = stats.t.cdf(t, len(vals)-1)
         assert p1 == abs(p1)
 
         p2 = 2*p1
-        print "p:", p2
+        print("p:", p2)
 
         if p2 > p:
-            print "passed with N=%s"%N
+            print("passed with N=%s"%N)
             return True   # test passed
     raise AssertionError("Test failed, %s!=%s(std=%s) (%s !< %s) with %s samples"%(mean, smean, sstd, p, p2, N))
 
@@ -237,7 +239,7 @@ class _TestRandom(unittest.TestCase):
         M1b, args = bm.main_argv(argv=argv+['--seed=51'])
 
         def edgeset(g):
-            print len(g), g.number_of_edges()
+            print(len(g), g.number_of_edges())
             return set(frozenset((a, b)) for a,b in g.edges_iter())
 
         assert_equal(    edgeset(M1a.t(5)), edgeset(M1b.t(5)))

@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import collections
 import contextlib
 import math
@@ -8,8 +10,10 @@ import threading
 import time
 
 import networkx as nx
+import matplotlib.pyplot as plt
 import numpy.random
 import scipy.stats
+import numpy as np # NOTE utiliza agora numpy
 
 import logging
 logger = logging.getLogger(__name__)
@@ -116,7 +120,7 @@ class Benchmark(object):
         comms = { }
         # Ask each manager for its communities, add them to comms.
         for mrg in self.managers:
-            for cname, cnodes in mrg.comms(t).iteritems():
+            for cname, cnodes in mrg.comms(t).items():
                 if cname in comms:
                     raise ValueError("Duplicate community name: %s"%cname)
                 comms[cname] = cnodes
@@ -139,11 +143,11 @@ class Benchmark(object):
         g = self.graph(t)
         comms = self.comms(t)
         node_comms = collections.defaultdict(set)
-        for c, nodes in comms.iteritems():
+        for c, nodes in comms.items():
             for n in nodes:
                 node_comms[n].add(c)
         edges = [ ]
-        for a, b in g.edges_iter():
+        for a, b in g.edges():
             if len(node_comms[a] & node_comms[b]) > 0:
                 edges.append((a,b))
         return edges
@@ -152,11 +156,11 @@ class Benchmark(object):
         g = self.graph(t)
         comms = self.comms(t)
         node_comms = collections.defaultdict(set)
-        for c, nodes in comms.iteritems():
+        for c, nodes in comms.items():
             for n in nodes:
                 node_comms[n].add(c)
         edges = [ ]
-        for a, b in g.edges_iter():
+        for a, b in g.edges():
             if len(node_comms[a] & node_comms[b]) == 0:
                 edges.append((a,b))
         return edges
@@ -209,9 +213,8 @@ def choose_random_edges(c1, c2=None, m=None, rng=None):
         edges = set()
         for _ in range(m):
             while True:
-                n1 = rng.sample(c1, 1)[0]#sets support sample but not choice
-                n2 = rng.sample(c2, 1)[0]
-                #print n1, n2
+                n1 = rng.sample(list(c1), 1)[0]#sets support sample but not choice
+                n2 = rng.sample(list(c2), 1)[0]
                 if n1 == n2: continue
                 e = frozenset((n1, n2))
                 if e in edges: continue
@@ -300,7 +303,7 @@ class Static(_Manager):
         if not self.bm.opts.get('Gnm', False):
             # Gnp random graph ensemble
             with override_numpy_seed(self.bm.rng):
-                n_edges = scipy.stats.binom(n_links, p).rvs()
+                n_edges = np.random.binomial(n_links, p) # NOTE usa numpy já que a versão do scipy foi deprecada
         else:
             # Gnm random graph ensemble
             n_edges = int(round(n_links * p ))
@@ -901,13 +904,12 @@ def main_argv(argv=sys.argv):
 
     model_params_names = ['q', 'n', 'p_in', 'p_out', 'tau', ]
 
-    print argv
     args = parser.parse_args(args=argv[1:])
 
     model_params = dict((name, getattr(args, name))
                         for name in model_params_names
                         if getattr(args, name) is not None)
-    print model_params
+    print(model_params)
     if args.k_in is not None:
         model_params['p_in']  = 'k=%f'%args.k_in
         assert args.p_in is None, "--k_in incompatible with --p_in"
@@ -947,7 +949,7 @@ def run(bm, maxt=100, output=None, graph_format='edgelist',
         comms = bm.comms(t)
         grammar = bm.grammar()
         for stmt in grammar:
-            print '   ', stmt
+            print('   ', stmt)
         if output:
             prefix = output + '.t%05d'%t
             # write graph
@@ -986,42 +988,42 @@ def run(bm, maxt=100, output=None, graph_format='edgelist',
                 f = open(prefix+'.comms', 'w')
                 label = 't=%s, command line: %s'%(t, ' '.join(sys.argv))
                 comm_writer(f, comms, label)
-        print t, len(g), g.number_of_edges(), len(comms), \
-            dict((k, len(v)) for k,v in comms.iteritems())
+        print(t, len(g), g.number_of_edges(), len(comms), \
+            dict((k, len(v)) for k,v in comms.items()))
 
 
 
 def write_comms_oneline(f, comms, label=None):
     """Write communities, one line per community."""
     if label:
-        print >> f, '#', label.replace('\n', ' ')
-    print >> f, '#', time.ctime()
-    print >> f, '# Format: "node_id node_id node_id ...", one line per community.'
-    for cname, cnodes in comms.iteritems():
-        print >> f, "# label: %s"%cname
-        print >> f, " ".join(str(x) for x in cnodes)
+        print('#', label.replace('\n', ' '), file=f)
+    print('#', time.ctime(), file=f)
+    print('# Format: "node_id node_id node_id ...", one line per community.', file=f)
+    for cname, cnodes in comms.items():
+        print("# label: %s"%cname, file=f)
+        print(" ".join(str(x) for x in cnodes), file=f)
 def write_comms_bynode(f, comms, label=None):
     """Write communities, lines with 'node comm' pairs"""
     if label:
-        print >> f, '#', label.replace('\n', ' ')
-    print >> f, '#', time.ctime()
-    print >> f, "# Format: node_id cmty_id"
-    for cname, cnodes in comms.iteritems():
+        print('#', label.replace('\n', ' '), file=f)
+    print('#', time.ctime(), file=f)
+    print("# Format: node_id cmty_id", file=f)
+    for cname, cnodes in comms.items():
         for node in cnodes:
-            print >> f, node, cname
+            print(node, cname, file=f)
 def write_comms_pajek(f, comms, label=None):
     """Write communities, lines with 'node comm' pairs"""
     if label:
-        print >> f, '#', label.replace('\n', ' ')
-    print >> f, '#', time.ctime()
-    print >> f, "# Format: cmty_id in node order"
-    print >> f, "*vertices"
+        print('#', label.replace('\n', ' '), file=f)
+    print('#', time.ctime(), file=f)
+    print("# Format: cmty_id in node order", file=f)
+    print("*vertices", file=f)
     nodecmtys = { }
-    for cname, cnodes in comms.iteritems():
+    for cname, cnodes in comms.items():
         for node in cnodes:
             nodecmtys[node] = cname
     for node in sorted(nodecmtys):
-        print >> f, nodecmtys[node]
+        print(nodecmtys[node], file=f)
 def write_temporal_edgelist(bm, g, fname, t):
     """Write temporal edgelist: (a, b, weight, time) pairs.
 
@@ -1036,12 +1038,12 @@ def write_temporal_edgelist(bm, g, fname, t):
         bm._temporal_edgelist_files = { }
     filedata = bm._temporal_edgelist_files
     if fname not in filedata:
-        print 'opening g'
+        print('opening g')
         f = filedata[fname] = open(fname, 'w')
     else:
         f = filedata[fname]
-    for a, b, data in g.edges_iter(data=True):
-        print >> f, a, b, data.get('weight', 1), t
+    for a, b, data in g.edges(data=True):
+        print(a, b, data.get('weight', 1), t, file=f)
     f.flush()
 def write_tmatrix_line(bm, fname, comms, t):
     """Write temporal communities in matrix format.
@@ -1057,13 +1059,13 @@ def write_tmatrix_line(bm, fname, comms, t):
         bm._temporal_comms_files = { }
     filedata = bm._temporal_comms_files
     if fname not in filedata:
-        print 'opening c'
+        print('opening c')
         f = filedata[fname] = open(fname, 'w')
     else:
         f = filedata[fname]
     # get node -> cmty map
     nodecmtys = { }
-    for cname, cnodes in comms.iteritems():
+    for cname, cnodes in comms.items():
         for node in cnodes:
             if node in nodecmtys:
                 raise NotImplementedError("tmatrix format does not "
@@ -1073,7 +1075,7 @@ def write_tmatrix_line(bm, fname, comms, t):
     # Assemble list and write it
     for n in sorted(nodecmtys):
         memberships.append(nodecmtys[n])
-    print >> f, ' '.join(str(x) for x in memberships)
+    print(' '.join(str(x) for x in memberships), file=f)
     f.flush()
 def write_temporal_commlist(bm, fname, comms, t):
     """Write temporal communities in one-line-per-node format.
@@ -1088,13 +1090,13 @@ def write_temporal_commlist(bm, fname, comms, t):
         bm._temporal_commlist_files = { }
     filedata = bm._temporal_commlist_files
     if fname not in filedata:
-        print 'opening c'
+        print('opening c')
         f = filedata[fname] = open(fname, 'w')
     else:
         f = filedata[fname]
-    for cname, cnodes in comms.iteritems():
+    for cname, cnodes in comms.items():
         for node in cnodes:
-            print >> f, t, node, cname
+            print(t, node, cname, file=f)
     f.flush()
 
 

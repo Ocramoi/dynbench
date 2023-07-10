@@ -1,10 +1,10 @@
-import sys
+#!/usr/bin/env python3
 
+import sys
 
 import pcd.cmty as cmty
 import pcd.cmtycmp
 import pcd.tcmty as tcmty
-
 
 def dyncmp(c1a, c1b, c2a, c2b, cmpfunc=pcd.cmtycmp.nmi):
     nc1t1 = c1t1.nodecmtys_onetoone()
@@ -29,7 +29,7 @@ def dyncmp(c1a, c1b, c2a, c2b, cmpfunc=pcd.cmtycmp.nmi):
 
 def dyncmp_series(tcmtys1, tcmtys2, dt, cmpfunc):
 
-    print "#t1 t2 value"
+    print("#t1 t2 value")
     ts = list(tcmtys1)
     if   dt  > 0:             endpoint = -dt
     elif dt == 0:    endpoint = None
@@ -42,7 +42,7 @@ def dyncmp_series(tcmtys1, tcmtys2, dt, cmpfunc):
 
         value = dyncmp(c1t1, c1t2, c2t1, c2t2, cmpfunc=cmpfunc)
 
-        print t1, t2, value
+        print(t1, t2, value)
 
 
 if __name__ == '__main__':
