@@ -366,8 +366,10 @@ class Merging(_Manager):
         if not self.bm.opts.get('Gnm', False):
             # Gnp random graph ensemble
             with override_numpy_seed(self.bm.rng):
-                self.m_low  = scipy.stats.binom(n_links, p_low ).rvs()
-                self.m_high = scipy.stats.binom(n_links, p_high).rvs()
+                # self.m_low  = scipy.stats.binom(n_links, p_low ).rvs()
+                self.m_low  = np.random.binomial(n_links, p_low) # NOTE usa numpy já que a versão do scipy foi deprecada
+                # self.m_high = scipy.stats.binom(n_links, p_high).rvs()
+                self.m_high  = np.random.binomial(n_links, p_high) # NOTE usa numpy já que a versão do scipy foi deprecada
         else:
             # Gnm random graph ensemble
             self.m_low  = int(round(n_links * p_low))
@@ -551,7 +553,8 @@ class ExpandContract(_Manager):
             # Internal edges from node to c1
             assert node in order
             if i > 0:
-                n_edges = scipy.stats.binom(i, p_in).rvs()
+                # n_edges = scipy.stats.binom(i, p_in).rvs()
+                n_edges = np.random.binomial(i, p_in) # NOTE usa numpy já que a versão do scipy foi deprecada
                 es = self.bm.rng.sample(order[:i], n_edges)
                 int_1_edges[node] = es
                 if i >= c1_minsize and n_edges <= 0:
@@ -565,7 +568,8 @@ class ExpandContract(_Manager):
 
             # External edges from node to c1
             if i > 0:
-                n_edges = scipy.stats.binom(i, p_out).rvs()
+                # n_edges = scipy.stats.binom(i, p_out).rvs()
+                n_edges = np.random.binomial(i, p_out) # NOTE usa numpy já que a versão do scipy foi deprecada
                 es = self.bm.rng.sample(order[:i], n_edges)
                 ext_1_edges[node] = es
                 assert node not in es
@@ -573,7 +577,8 @@ class ExpandContract(_Manager):
 
             # Internal edges from node to c2
             if i < N-1:
-                n_edges = scipy.stats.binom(N-1-i, p_in).rvs()
+                # n_edges = scipy.stats.binom(N-1-i, p_in).rvs()
+                n_edges = np.random.binomial(N - 1 - i, p_in) # NOTE usa numpy já que a versão do scipy foi deprecada
                 es = self.bm.rng.sample(order[i+1:], n_edges)
                 int_2_edges[node] = es
                 if i <= c1_maxsize and n_edges <= 0:
@@ -588,7 +593,8 @@ class ExpandContract(_Manager):
 
             # External edges from node to c1
             if i < N-1:
-                n_edges = scipy.stats.binom(N-1-i, p_out).rvs()
+                # n_edges = scipy.stats.binom(N-1-i, p_out).rvs()
+                n_edges = np.random.binomial(N - 1 - i, p_out) # NOTE usa numpy já que a versão do scipy foi deprecada
                 es = self.bm.rng.sample(order[i+1:], n_edges)
                 ext_2_edges[node] = es
                 assert node not in es
